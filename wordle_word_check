@@ -1,0 +1,114 @@
+<form version="1.1" theme="light">
+  <label>wordle word check</label>
+  <fieldset submitButton="false">
+    <input type="text" token="word_tok" searchWhenChanged="true">
+      <label>word to check</label>
+      <default>*</default>
+    </input>
+    <input type="checkbox" token="reset_dtoken" searchWhenChanged="true">
+      <label>Tokens Reset</label>
+      <choice value="*">Reset</choice>
+      <change>
+        <unset token="word_tok"></unset>
+        <unset token="form.word_tok"></unset>
+        <unset token="ans_tok"></unset>
+        <unset token="form.ans_tok"></unset>
+        <unset token="puzz_tok"></unset>
+        <unset token="form.puzz_tok"></unset>
+        <unset token="puzdate_tok"></unset>
+        <unset token="form.puzdate_tok"></unset>
+        <unset token="reset_dtoken"></unset>
+        <unset token="form.reset_dtoken"></unset>
+      </change>
+      <initialValue>none</initialValue>
+      <delimiter> </delimiter>
+    </input>
+    <input type="checkbox" token="new_add_tok">
+      <label>add new entry</label>
+      <choice value="go">&lt;- Open new panel</choice>
+      <change>
+        <condition match="$new_add_tok$==&quot;go&quot;">
+          <set token="add_tok">true</set>
+          <unset token="no_add_tok"></unset>
+        </condition>
+        <condition>
+          <set token="no_add_tok">true</set>
+          <unset token="add_tok"></unset>
+        </condition>
+      </change>
+    </input>
+  </fieldset>
+  <row depends="$add_tok$">
+    <panel>
+      <input type="text" token="ans_tok" searchWhenChanged="true">
+        <label>answer</label>
+      </input>
+      <input type="text" token="puzz_tok">
+        <label>puzzle number</label>
+      </input>
+      <input type="text" token="puzdate_tok" searchWhenChanged="true">
+        <label>puzzle_date</label>
+      </input>
+      <html>
+    Enter details then press enter after adding the date (in the format below). 
+    <br/>
+    <a href="/app/lookup_editor/lookup_edit?owner=nobody&amp;namespace=lookup_editor&amp;lookup=wordle.csv&amp;type=csv&amp;transform=" target="_blank">Add Words/Maintain List via Lookup Editor</a>
+    <br/>
+  </html>
+    </panel>
+  </row>
+  <row depends="$puzdate_tok$">
+    <panel>
+      <table>
+        <search>
+          <query>
+            | makeresults count=1
+            | eval answer="$ans_tok$", puzzle="$puzz_tok$" ,  puzzle_date="$puzdate_tok$"
+            | eval h_epoch=strptime(puzzle_date,"%Y-%m-%d")
+            | eval epoch=round(h_epoch,0)
+            | eval answer=upper(answer)
+            | table answer puzzle puzzle_date epoch
+            | outputlookup append=t wordle.csv
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>
+            | inputlookup wordle.csv
+            | search answer IN($word_tok$)
+            | table answer puzzle puzzle_date epoch
+            | where ISNOTNULL(answer)
+            | sort 0 - puzzle
+            | streamstats window=2 range(puzzle) as missing
+            | eval missing=if(missing&gt;1,"yes","no")
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">30</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
