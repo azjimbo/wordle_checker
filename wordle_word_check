@@ -84,6 +84,35 @@
       </table>
     </panel>
   </row>
+  <row depends="$word_tok$">
+    <panel>
+      <table>
+        <search>
+          <query>
+            | makeresults
+            | eval answer="$word_tok$"
+            | makemv delim=" " answer
+            | mvexpand answer
+            | eval answer=UPPER(answer)
+            | lookup wordle.csv answer  output  puzzle puzzle_date 
+            | where ISNULL(puzzle_date)
+            | table  answer puzzle puzzle_date 
+            | sort 0 answer
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">30</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
   <row>
     <panel>
       <table>
@@ -110,5 +139,8 @@
         <option name="wrap">true</option>
       </table>
     </panel>
-  </row>
+  </row>  
+  
+  
+  
 </form>
